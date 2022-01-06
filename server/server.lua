@@ -1,8 +1,18 @@
 ObjectController = {}
 ObjectController._store = {}
 
-ObjectController.create = function(_model, _position, _rotation, _freezed, _collision, _alpha, _servervariables,
-    _sharedvariables)
+-- _options = {
+--     rotation = vector3,
+--     freezed = boolean,
+--     collision = boolean,
+--     alpha = number,
+--     clickable = boolean,
+--     servervariables = table,
+--     sharedvariables = table,
+-- }
+
+ObjectController.create = function(_model, _position, _options)
+
     if type(_model) ~= 'string' then
         print('ObjectController.create failed: _model is not a string.')
         return
@@ -25,6 +35,7 @@ ObjectController.create = function(_model, _position, _rotation, _freezed, _coll
     self.data.model = _model
     self.data.position = _position
     -- Default values
+    self.data.clickable = false
     self.data.rotation = vector3(0, 0, 0)
     self.data.freezed = true
     self.data.collision = true
@@ -33,28 +44,34 @@ ObjectController.create = function(_model, _position, _rotation, _freezed, _coll
     self.data.sharedvariables = {} -- Shared to clientside
     -- 
 
-    if type(_servervariables) == 'table' then
-        self.data.servervariables = _servervariables
-    end
+    if type(_options) == 'table' then
+        if type(_options.servervariables) == 'table' then
+            self.data.servervariables = _options.servervariables
+        end
 
-    if type(_sharedvariables) == 'table' then
-        self.data.sharedvariables = _sharedvariables
-    end
+        if type(_options.sharedvariables) == 'table' then
+            self.data.sharedvariables = _options.sharedvariables
+        end
 
-    if type(_rotation) == 'vector3' then
-        self.data.rotation = _rotation
-    end
+        if type(_options.rotation) == 'vector3' then
+            self.data.rotation = _options.rotation
+        end
 
-    if type(_freezed) == 'boolean' then
-        self.data.freezed = _freezed
-    end
+        if type(_options.freezed) == 'boolean' then
+            self.data.freezed = _options.freezed
+        end
 
-    if type(_alpha) == 'number' then
-        self.data.alpha = _alpha
-    end
+        if type(_options.alpha) == 'number' then
+            self.data.alpha = _options.alpha
+        end
 
-    if type(_collision) == 'boolean' then
-        self.data.collision = _collision
+        if type(_options.collision) == 'boolean' then
+            self.data.collision = _options.collision
+        end
+
+        if type(_options.clickable) == 'boolean' then
+            self.data.clickable = _options.clickable
+        end
     end
 
     self.setPosition = function(_pos)
@@ -189,17 +206,13 @@ ObjectController.populate = function(source)
 end
 
 SetTimeout(200, function()
-    local o = ObjectController.create('prop_barrel_01a', vector3(-266, -2422, 122))
-    -- SetTimeout(3000, function()
-    --     o.object.setPosition(vector3(-266, -2422, 124))
-    -- end)
-    o.object.setSharedVar('name', 'Object Name')
+    local o = ObjectController.create('prop_barrel_01a', vector3(-2612, 1870, 167), {
+        clickable = true
+    })
+    -- o.object.setPosition(vector3(-266, -2422, 124))
+    -- o.object.setSharedVar('name', 'Object Name')
 end)
 
 AddEventHandler('playerJoining', function()
     ObjectController.populate(source)
-end)
-
-AddEventHandler(Config.Events.variable_changed, function(uid, key, value)
-    Config.DebugMsg(string.format('Object variable changed: (%s) %s', key, value))
 end)

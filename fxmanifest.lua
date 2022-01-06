@@ -8,10 +8,12 @@ version '1.0.0'
 
 server_scripts {
     'config.lua',
-    'server.lua',
+    'server/server.lua',
 }
 
 client_scripts {
     'config.lua',
-    'client.lua'
+    'client/client.lua',
+    'client/cl_w2s.lua',
+    'client/cl_aimcontroller.lua'
 }

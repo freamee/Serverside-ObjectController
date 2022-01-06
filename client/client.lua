@@ -27,7 +27,16 @@ ClientObjectController.isStreamed = function(uid)
     return ClientObjectController._streamed[uid] ~= nil and DoesEntityExist(ClientObjectController._streamed[uid])
 end
 
-ClientObjectController.getObject = function(uid)
+-- Search through the streamed for an object. (Needed for aimingEntity)
+ClientObjectController.getObjectByHandle = function(obj)
+    for uid, object in pairs(ClientObjectController._streamed) do
+        if obj == object and ClientObjectController._store[uid] then
+            return ClientObjectController._store[uid]
+        end
+    end
+end
+
+ClientObjectController.getObjectByUID = function(uid)
     if ClientObjectController.isStreamed(uid) then
         return ClientObjectController._streamed[uid]
     end
@@ -131,7 +140,7 @@ AddEventHandler(Config.Events.set_position, function(uid, value)
     end
 
     if ClientObjectController.isStreamed(uid) then
-        local object = ClientObjectController.getObject(uid)
+        local object = ClientObjectController.getObjectByUID(uid)
         if object then
             local x, y, z = table.unpack(value)
             SetEntityCoords(object, x, y, z, false, false, false, false)
@@ -151,7 +160,7 @@ AddEventHandler(Config.Events.set_alpha, function(uid, value)
     end
 
     if ClientObjectController.isStreamed(uid) then
-        local object = ClientObjectController.getObject(uid)
+        local object = ClientObjectController.getObjectByUID(uid)
         if object then
             SetEntityAlpha(object, value, false)
         end
@@ -170,7 +179,7 @@ AddEventHandler(Config.Events.set_rotation, function(uid, value)
     end
 
     if ClientObjectController.isStreamed(uid) then
-        local object = ClientObjectController.getObject(uid)
+        local object = ClientObjectController.getObjectByUID(uid)
         if object then
             local rx, ry, rz = table.unpack(value)
             SetEntityRotation(object, rx, ry, rz, 2, false)
@@ -190,7 +199,7 @@ AddEventHandler(Config.Events.set_freeze, function(uid, value)
     end
 
     if ClientObjectController.isStreamed(uid) then
-        local object = ClientObjectController.getObject(uid)
+        local object = ClientObjectController.getObjectByUID(uid)
         if object then
             FreezeEntityPosition(object, value)
         end
@@ -215,12 +224,5 @@ AddEventHandler(Config.Events.set_model, function(uid, value)
             Citizen.Wait(100)
             ClientObjectController.addStream(uid)
         end)
-    end
-end)
-
-RegisterNetEvent(Config.Events.variable_changed)
-AddEventHandler(Config.Events.variable_changed, function(uid, key, value)
-    if ClientObjectController._store[uid] then
-        ClientObjectController._store[uid].sharedvariables[key] = value
     end
 end)
