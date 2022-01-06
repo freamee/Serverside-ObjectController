@@ -1,7 +1,8 @@
 ObjectController = {}
 ObjectController._store = {}
 
-ObjectController.create = function(_model, _position, _rotation, _freezed, _collision, _alpha, _variables)
+ObjectController.create = function(_model, _position, _rotation, _freezed, _collision, _alpha, _servervariables,
+    _sharedvariables)
     if type(_model) ~= 'string' then
         print('ObjectController.create failed: _model is not a string.')
         return
@@ -9,11 +10,6 @@ ObjectController.create = function(_model, _position, _rotation, _freezed, _coll
 
     if type(_position) ~= 'vector3' then
         print('ObjectController.create failed: _position is not a vector3.')
-        return
-    end
-
-    if type(_rotation) ~= 'vector3' then
-        print('ObjectController.create failed: _rotation is not a vector3.')
         return
     end
 
@@ -25,69 +21,125 @@ ObjectController.create = function(_model, _position, _rotation, _freezed, _coll
 
     local self = {}
     self.data = {}
-
     self.data.uid = uid
     self.data.model = _model
     self.data.position = _position
-    self.data.rotation = _rotation
-    self.data.freezed = _freezed
-    self.data.collision = _collision
-    self.data.alpha = _alpha
-    self.data.visible = true
-    self.data.variables = {}
+    -- Default values
+    self.data.rotation = vector3(0, 0, 0)
+    self.data.freezed = true
+    self.data.collision = true
+    self.data.alpha = 255
+    self.data.servervariables = {} -- To keep them private on serverside
+    self.data.sharedvariables = {} -- Shared to clientside
+    -- 
+
+    if type(_servervariables) == 'table' then
+        self.data.servervariables = _servervariables
+    end
+
+    if type(_sharedvariables) == 'table' then
+        self.data.sharedvariables = _sharedvariables
+    end
+
+    if type(_rotation) == 'vector3' then
+        self.data.rotation = _rotation
+    end
+
+    if type(_freezed) == 'boolean' then
+        self.data.freezed = _freezed
+    end
+
+    if type(_alpha) == 'number' then
+        self.data.alpha = _alpha
+    end
+
+    if type(_collision) == 'boolean' then
+        self.data.collision = _collision
+    end
 
     self.setPosition = function(_pos)
         if type(_pos) ~= 'vector3' then
-            print('Object setPosition failed: _pos is not a vector3.')
+            print('setPosition failed: _pos is not a vector3.')
             return
         end
 
         self.data.position = _pos
-        -- CLIENT EVENT
+        TriggerClientEvent(Config.Events.set_position, -1, self.data.uid, _pos)
     end
 
-    self.setVisible = function(_state)
-        if type(_state) ~= 'boolean' then
-            print('Object setVisible failed: _state is not a boolean.')
+    self.setRotation = function(_rot)
+        if type(_rot) ~= 'vector3' then
+            print('setRotation failed: _rot is not a vector3.')
             return
         end
 
-        self.data.visible = _state
-        -- CLIENT EVENT
+        self.data.rotation = _rot
+        TriggerClientEvent(Config.Events.set_rotation, -1, self.data.uid, _rot)
+    end
+
+    self.setFreezed = function(_state)
+        if type(_state) ~= 'boolean' then
+            print('setFreeze failed: _state is not a boolean.')
+            return
+        end
+
+        self.data.freezed = _state
+        TriggerClientEvent(Config.Events.set_freeze, -1, self.data.uid, _state)
+    end
+
+    self.setModel = function(_value)
+        if type(_value) ~= 'string' then
+            print('setModel failed: _value is not a string.')
+            return
+        end
+
+        self.data.model = _value
+        TriggerClientEvent(Config.Events.set_model, -1, self.data.uid, _value)
     end
 
     self.setAlpha = function(_alpha)
         if type(_alpha) ~= 'number' then
-            print('Object setAlpha failed: _alpha not a number.')
+            print('setAlpha failed: _alpha not a number.')
             return
         end
 
         self.data.alpha = _alpha
-        -- CLIENT EVENT
+        TriggerClientEvent(Config.Events.set_alpha, -1, self.data.uid, _alpha)
     end
 
-    self.setVar = function(key, value)
+    self.setServerVariable = function(key, value)
         if type(key) ~= 'string' then
-            print('Object setVar failed: key is not a string.')
+            print('setServerVariable failed: key is not a string.')
             return
         end
-        self.data.variables[key] = value
+
+        self.data.servervariables[key] = value
+        TriggerEvent(Config.Events.variable_changed, self.data.uid, key, value)
     end
 
-    self.getVar = function(key)
+    self.setSharedVar = function(key, value)
         if type(key) ~= 'string' then
-            print('Object getVar failed: key is not a string.')
+            print('setSharedVar failed: key is not a string.')
             return
         end
-        return self.data.variables[key]
+        self.data.sharedvariables[key] = value
+        TriggerEvent(Config.Events.variable_changed, self.data.uid, key, value)
+        TriggerClientEvent(Config.Events.variable_changed, -1, self.data.uid, key, value)
     end
 
-    if type(_variables) == 'table' then
-        self.variables = _variables
+    self.getSharedVar = function(key)
+        if type(key) ~= 'string' then
+            print('getSharedVar failed: key is not a string.')
+            return
+        end
+        return self.data.sharedvariables[key]
     end
 
     ObjectController._store[uid] = self
     TriggerClientEvent(Config.Events.append, -1, self.data)
+
+    Config.DebugMsg(string.format('Object created %s (uid: %s)', self.data.model, uid))
+
     return {
         uid = uid,
         object = ObjectController._store[uid]
@@ -137,11 +189,17 @@ ObjectController.populate = function(source)
 end
 
 SetTimeout(200, function()
-    local o = ObjectController.create('prop_barrel_01a', vector3(1, 0, 0), vector3(0, 0, 0))
-    o.object.setVar('test', true)
-    o.object.setVar('test', nil)
+    local o = ObjectController.create('prop_barrel_01a', vector3(-266, -2422, 122))
+    -- SetTimeout(3000, function()
+    --     o.object.setPosition(vector3(-266, -2422, 124))
+    -- end)
+    o.object.setSharedVar('name', 'Object Name')
 end)
 
 AddEventHandler('playerJoining', function()
     ObjectController.populate(source)
+end)
+
+AddEventHandler(Config.Events.variable_changed, function(uid, key, value)
+    Config.DebugMsg(string.format('Object variable changed: (%s) %s', key, value))
 end)
