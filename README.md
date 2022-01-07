@@ -1,14 +1,24 @@
 # ObjectController
 
-## Table of Contents
+- [ObjectController](#objectcontroller)
+  - [About](#about)
+  - [Features](#features)
+  - [Usage](#usage)
 
-- [About](#about)
-- [Usage](#usage)
+## About
 
-## About <a name = "about"></a>
+Serverside **'static'** object creator for FiveM.
+<br>
+You can easily create objects on serverstart with synced variables and other helping functions.
 
-TODO
+Keep in mind these objects are **not networked** on clientside, so if you are triggering a clientside function on them it will not be synced to other clients.
 
-## Usage <a name = "usage"></a>
+## Features
+
+- Add variables to objects (shared or only server variable)
+- Click on objects with raycasting. (turnoff available in config.lua)
+- Config and **'globally'** triggered events already added. (Object clicking, variable change, etc.) [CHECK CONFIG](config.lua)
+
+## Usage
 
 TODO

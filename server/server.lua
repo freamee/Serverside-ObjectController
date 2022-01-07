@@ -7,8 +7,8 @@ ObjectController._store = {}
 --     collision = boolean,
 --     alpha = number,
 --     clickable = boolean,
---     servervariables = table,
---     sharedvariables = table,
+--     servervars = table,
+--     sharedvars = table,
 -- }
 
 ObjectController.create = function(_model, _position, _options)
@@ -40,17 +40,17 @@ ObjectController.create = function(_model, _position, _options)
     self.data.freezed = true
     self.data.collision = true
     self.data.alpha = 255
-    self.data.servervariables = {} -- To keep them private on serverside
-    self.data.sharedvariables = {} -- Shared to clientside
+    self.data.servervars = {} -- To keep them private on serverside
+    self.data.sharedvars = {} -- Shared to clientside
     -- 
 
     if type(_options) == 'table' then
-        if type(_options.servervariables) == 'table' then
-            self.data.servervariables = _options.servervariables
+        if type(_options.servervars) == 'table' then
+            self.data.servervars = _options.servervars
         end
 
-        if type(_options.sharedvariables) == 'table' then
-            self.data.sharedvariables = _options.sharedvariables
+        if type(_options.sharedvars) == 'table' then
+            self.data.sharedvars = _options.sharedvars
         end
 
         if type(_options.rotation) == 'vector3' then
@@ -130,7 +130,7 @@ ObjectController.create = function(_model, _position, _options)
             return
         end
 
-        self.data.servervariables[key] = value
+        self.data.servervars[key] = value
         TriggerEvent(Config.Events.variable_changed, self.data.uid, key, value)
     end
 
@@ -139,7 +139,7 @@ ObjectController.create = function(_model, _position, _options)
             print('setSharedVar failed: key is not a string.')
             return
         end
-        self.data.sharedvariables[key] = value
+        self.data.sharedvars[key] = value
         TriggerEvent(Config.Events.variable_changed, self.data.uid, key, value)
         TriggerClientEvent(Config.Events.variable_changed, -1, self.data.uid, key, value)
     end
@@ -149,7 +149,7 @@ ObjectController.create = function(_model, _position, _options)
             print('getSharedVar failed: key is not a string.')
             return
         end
-        return self.data.sharedvariables[key]
+        return self.data.sharedvars[key]
     end
 
     ObjectController._store[uid] = self
@@ -209,10 +209,15 @@ SetTimeout(200, function()
     local o = ObjectController.create('prop_barrel_01a', vector3(-2612, 1870, 167), {
         clickable = true
     })
-    -- o.object.setPosition(vector3(-266, -2422, 124))
-    -- o.object.setSharedVar('name', 'Object Name')
+    o.object.setPosition(vector3(-2609, 1869, 167))
+    o.object.setSharedVar('name', 'Shared Variable Example')
 end)
 
 AddEventHandler('playerJoining', function()
     ObjectController.populate(source)
 end)
+
+exports('oc_create', ObjectController.create)
+exports('oc_delete', ObjectController.delete)
+exports('oc_get', ObjectController.get)
+exports('oc_exist', ObjectController.exist)

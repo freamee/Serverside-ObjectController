@@ -64,7 +64,7 @@ else -- Client
 
     AddEventHandler(Config.Events.variable_changed, function(uid, key, value)
         if ClientObjectController._store[uid] then
-            ClientObjectController._store[uid].sharedvariables[key] = value
+            ClientObjectController._store[uid].sharedvars[key] = value
         end
     end)
 end

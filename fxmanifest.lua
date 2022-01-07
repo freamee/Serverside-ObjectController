@@ -15,5 +15,7 @@ client_scripts {
     'config.lua',
     'client/client.lua',
     'client/cl_w2s.lua',
-    'client/cl_aimcontroller.lua'
+    'client/cl_aimcontroller.lua',
+    'client/cl_functioncontroller.lua',
+    'client/example.lua'
 }
