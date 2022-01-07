@@ -26,10 +26,10 @@ Config.AimEntity = {
     CenterCursorOnOpen = true,
     EnableDrawLine = true, -- Enable drawline between hitcoord and playercoords.
     EnableSprite = false, -- Enable the sprite rendering on the hitcoords.
-    SpriteDict = 'mphud',
-    SpriteName = 'spectating',
-    CursorSpriteOnAim = 11,
-    CursorSpriteDefault = 1
+    SpriteDict = 'mphud', -- If EnableSprite enabled
+    SpriteName = 'spectating', -- If EnableSprite enabled
+    CursorSpriteOnAim = 11, -- Cursor sprite when aimed on object
+    CursorSpriteDefault = 1 -- Cursor sprite default
 }
 
 Config.DebugMsg = function(msg)
@@ -37,10 +37,6 @@ Config.DebugMsg = function(msg)
         print(msg)
     end
 end
-
-RegisterCommand('pos', function()
-    print(GetEntityCoords(PlayerPedId()))
-end, false)
 
 if IsDuplicityVersion() then -- Server
     RegisterNetEvent(Config.Events.object_clicked)

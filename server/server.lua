@@ -11,7 +11,7 @@ ObjectController._store = {}
 --     sharedvars = table,
 -- }
 
-ObjectController.create = function(_model, _position, _options)
+ObjectController.create = function(_model, _position, _uid, _options)
 
     if type(_model) ~= 'string' then
         print('ObjectController.create failed: _model is not a string.')
@@ -23,15 +23,22 @@ ObjectController.create = function(_model, _position, _options)
         return
     end
 
-    local uid = ObjectController.generateUID()
-    if not uid then
-        print('ObjectController.create failed: Uid is nil.')
+    if _uid == nil or type(_uid) ~= 'string' then
+        _uid = ObjectController.generateUID()
+        if not _uid then
+            print('ObjectController.create failed: Uid is nil.')
+            return
+        end
+    end
+
+    if ObjectController._store[_uid] then
+        print('ObjectController.create failed: Uid already exist in _store.')
         return
     end
 
     local self = {}
     self.data = {}
-    self.data.uid = uid
+    self.data.uid = _uid
     self.data.model = _model
     self.data.position = _position
     -- Default values
@@ -71,6 +78,32 @@ ObjectController.create = function(_model, _position, _options)
 
         if type(_options.clickable) == 'boolean' then
             self.data.clickable = _options.clickable
+        end
+    end
+
+    self.save = function()
+        local exist = MySQL.Sync.fetchScalar('SELECT COUNT(1) FROM av_objects WHERE uid = @uid', {
+            ['@uid'] = self.data.uid
+        })
+
+        if exist < 1 then
+            local qry = 'INSERT INTO av_objects SET uid = @uid'
+            MySQL.Async.execute(qry, {
+                ['@uid'] = self.data.uid
+            }, function()
+                self.save()
+            end)
+        else
+            local qry =
+                'UPDATE av_objects SET sharedvars = @sharedvars, servervars = @servervars, pos = @pos, rot = @rot, uid = @uid'
+
+            MySQL.Sync.execute(qry, {
+                ['@sharedvars'] = json.encode(self.data.sharedvars),
+                ['@servervars'] = json.encode(self.data.servervars),
+                ['@pos'] = json.encode(self.data.position),
+                ['@rot'] = json.encode(self.data.rotation),
+                ['@uid'] = self.data.uid
+            })
         end
     end
 
@@ -134,6 +167,14 @@ ObjectController.create = function(_model, _position, _options)
         TriggerEvent(Config.Events.variable_changed, self.data.uid, key, value)
     end
 
+    self.getServerVar = function(key)
+        if type(key) ~= 'string' then
+            print('getServerVar failed: key is not a string.')
+            return
+        end
+        return self.data.servervars[key]
+    end
+
     self.setSharedVar = function(key, value)
         if type(key) ~= 'string' then
             print('setSharedVar failed: key is not a string.')
@@ -152,14 +193,14 @@ ObjectController.create = function(_model, _position, _options)
         return self.data.sharedvars[key]
     end
 
-    ObjectController._store[uid] = self
+    ObjectController._store[self.data.uid] = self
     TriggerClientEvent(Config.Events.append, -1, self.data)
 
-    Config.DebugMsg(string.format('Object created %s (uid: %s)', self.data.model, uid))
+    Config.DebugMsg(string.format('Object created %s (uid: %s)', self.data.model, self.data.uid))
 
     return {
-        uid = uid,
-        object = ObjectController._store[uid]
+        uid = self.data.uid,
+        object = ObjectController._store[self.data.uid]
     }
 end
 
@@ -205,14 +246,6 @@ ObjectController.populate = function(source)
     end
 end
 
-SetTimeout(200, function()
-    local o = ObjectController.create('prop_barrel_01a', vector3(-2612, 1870, 167), {
-        clickable = true
-    })
-    o.object.setPosition(vector3(-2609, 1869, 167))
-    o.object.setSharedVar('name', 'Shared Variable Example')
-end)
-
 AddEventHandler('playerJoining', function()
     ObjectController.populate(source)
 end)
@@ -221,3 +254,12 @@ exports('oc_create', ObjectController.create)
 exports('oc_delete', ObjectController.delete)
 exports('oc_get', ObjectController.get)
 exports('oc_exist', ObjectController.exist)
+
+-- SetTimeout(200, function()
+--     local o = ObjectController.create('prop_barrel_01a', vector3(-2612, 1870, 167), 'uid-1', {
+--         clickable = true
+--     })
+--     o.object.setPosition(vector3(-2609, 1869, 167))
+--     o.object.setSharedVar('name', 'Shared Variable Example')
+--     o.object.save()
+-- end)
